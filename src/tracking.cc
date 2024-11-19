@@ -67,6 +67,11 @@ int tracking::GrabImageMonocular(const cv::Mat &im, const double &ImgTimeStamp, 
     // 1. param initial
     cv::Mat ImTrack, ImTrack1;
     im.copyTo(ImTrack);
+
+    if (ImTrack.cols != Set->Width || ImTrack.rows != Set->Height) {
+        cv::resize(ImTrack, ImTrack, cv::Size(Set->Width, Set->Height));
+    }
+
     if(Set->Flag_RGB==0)
         cvtColor(ImTrack, ImTrack, CV_BGR2GRAY);
     else if(Set->Flag_RGB==1)
@@ -194,7 +199,7 @@ void tracking::Initialization(bool &FLAG_HASRECORD)
 
     if(!ciInitializer){
         // A) find 1st initial frame
-        if(cfCurrentFrame.iNScene>100 ){
+        if(cfCurrentFrame.iNScene>100 ){ // iNScene: all scene pts number
             cfInitialFrame = frame(cfCurrentFrame);
             cfLastFrame = frame(cfCurrentFrame);
             cfLastIniFrame = frame(cfCurrentFrame);
@@ -209,10 +214,11 @@ void tracking::Initialization(bool &FLAG_HASRECORD)
         cfLastIniFrame = frame(cfCurrentFrame);
 
         // B.1) find 2nd initial frame
-        if(cfCurrentFrame.iN<=100 ){
+        if(cfCurrentFrame.iN<=100 ){ // iN = iNScene + iNTextFea;
             delete ciInitializer;
             ciInitializer = static_cast<initializer*>(nullptr);
             fill(vIniMatches.begin(), vIniMatches.end(),-1);
+            // std::cout << "Current frame does not have enough features. Resetting initializer." << std::endl;
             return;
         }
 
@@ -2580,6 +2586,35 @@ void tracking::RecordKeyFrame_latest()
         outfile1<<setprecision(6) <<kf->dTimeStamp<<setprecision(7)<<" ";
         outfile1<<kTwc(0,3)<<" "<<kTwc(1,3)<<" "<<kTwc(2,3)<<" ";
         outfile1<<qwc.x()<<" "<< qwc.y()<<" "<< qwc.z()<<" "<< qwc.w() << '\n';
+        // outfile1 << kf->vTextDete.size() << " ";
+
+        // if(!kf->vTextDete.empty())
+        // {
+        //     string allTexts, allScores, allSemantic;
+        //     for(size_t iText = 0; iText < kf->vTextDete.size(); iText++)
+        //     {
+        //         allTexts += kf->vTextMean[iText].mean;
+        //         allScores += std::to_string(kf->vTextMean[iText].score);
+        //         allSemantic += std::to_string(kf->vTextMean[iText].score_semantic);
+
+        //         if(iText != kf->vTextDete.size() - 1){
+        //             allTexts += ";";
+        //             allScores += ";";
+        //             allSemantic += ";";
+        //         }
+        //     }
+        //     outfile1 << allTexts << " ";
+        //     outfile1 << allScores << " ";
+        //     outfile1 << allSemantic << " ";
+        // }
+        // else
+        // {
+        //     outfile1 << "None ";
+        //     outfile1 << "None ";
+        //     outfile1 << "None ";
+        // }
+
+        // outfile1 << '\n';
 
     }
     outfile1.close();
